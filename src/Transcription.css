@@ -1,0 +1,127 @@
+/* Transcription.css */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5; /* Light gray background like in your first image */
+}
+
+#root {
+    height: 100%;
+    width: 100%;
+}
+
+.app-container {
+    max-width: 1200px;
+    max-height: 1200px;
+    margin: 0 auto;
+    padding: 200px;
+    background-color: #f8f9fa;
+  }
+  
+  .app-logo {
+    width: 100px; /* Make logo smaller */
+    height: auto;
+    margin: 10px 0;
+  }
+  
+  .app-logo-rotate {
+    animation: spin 2s linear infinite;
+  }
+  
+  .timer {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  
+  .main-title {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .question-text {
+    color: #333;
+    font-size: 16px;
+    margin-bottom: 15px;
+  }
+  
+  .textarea-container {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 3px 3px 6px #00000029;
+    border-radius: 11px;
+  }
+  
+  .reference-textarea, .speech-textarea {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    font-size: 16px;
+    resize: none;
+    background-color: white;
+    box-shadow: 3px 3px 6px #00000029;
+    border-radius: 5px;
+  }
+  
+  .reference-textarea {
+    height: 60px;
+  }
+  
+  .speech-textarea {
+    height: 160px;
+  }
+  
+  .instructions-text {
+    color: #666;
+    font-style: italic;
+    font-size: 14px;
+    margin: 15px 0;
+  }
+  
+  .note-text {
+    color: #666;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  
+  .button-container {
+    display: flex;
+    gap: 150px;
+    margin-top: 20px;
+
+  }
+  
+  .btn-primary {
+    background-color: #5F249F !important; /* Purple color from first image */
+    border-color: #5F249F !important;
+    width: 200px;
+  }
+  
+  .btn-warning {
+    background-color: #5F249F !important;
+    border-color: #5F249F !important;
+    color: white !important;
+    width: 200px;
+  }
+  
+  .btn-secondary {
+    background-color: #5F249F !important;
+    border-color: #5F249F !important;
+    color: white !important;
+    width: 200px;
+  }
+  
+  .link-text {
+    color: #5F249F;
+    text-decoration: none;
+  }
+  
+  .link-text:hover {
+    text-decoration: underline;
+  }
