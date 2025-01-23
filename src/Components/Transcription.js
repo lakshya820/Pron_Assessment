@@ -16,7 +16,7 @@ const STT_URL = "https://azure.microsoft.com/en-us/products/cognitive-services/s
 const REFERENCE_TEXTS = [
   "This is the sample sentence for pronunciation assessment.",
   "The quick brown fox jumps over the lazy dog.",
-  "Please call Stella, ask her to bring these things with her from the store."
+  "A talented musician practices diligently to perfect each beautiful melody."
 ]
 
 let transcriptionRecognizer = null
@@ -181,7 +181,7 @@ function Transcription() {
       currentPronunciationConfig = new speechsdk.PronunciationAssessmentConfig(
         currentText,
         speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
-        speechsdk.PronunciationAssessmentGranularity.Word,
+        speechsdk.PronunciationAssessmentGranularity.Phoneme,
         true
       )
       await currentPronunciationConfig.applyTo(assessmentRecognizer)
