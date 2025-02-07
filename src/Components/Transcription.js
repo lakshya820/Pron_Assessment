@@ -15,7 +15,7 @@ const STT_URL = "https://azure.microsoft.com/en-us/products/cognitive-services/s
 
 const REFERENCE_TEXTS = [
   "This is the sample sentence for pronunciation assessment.",
-  "The quick brown fox jumps over the lazy dog.",
+  "A beautiful butterfly fluttered through the cosy garden searching for sweet nectar.",
   "A talented musician practices diligently to perfect each beautiful melody."
 ]
 
@@ -208,15 +208,32 @@ function Transcription() {
       assessmentRecognizer.recognized = (s, e) => {
         if (e.result.reason === speechsdk.ResultReason.RecognizedSpeech) {
           try {
-            const pronunciationResult = speechsdk.PronunciationAssessmentResult.fromResult(e.result)
-            console.log("Full pronunciation result:", pronunciationResult)
-
+            const pronunciationResult = speechsdk.PronunciationAssessmentResult.fromResult(e.result);
+            console.log("Full pronunciation result:", pronunciationResult);
+      
             // Get reference and spoken words, normalized for comparison
-            const referenceWords = currentText.toLowerCase().split(/\s+/)
-            const spokenWords = e.result.text.toLowerCase().split(/\s+/)
-
-            let errors = []
-
+            const referenceWords = currentText.toLowerCase().split(/\s+/);
+            const spokenWords = e.result.text.toLowerCase().split(/\s+/);
+      
+            // Count missing words
+            const missingWordsCount = referenceWords.filter(word => 
+              !spokenWords.includes(word)
+            ).length;
+      
+            // Calculate completeness penalty based on missing words
+            const completenessScore = Math.max(
+              0, 
+              (pronunciationResult.completenessScore * (referenceWords.length - missingWordsCount) / referenceWords.length)
+            );
+      
+            // Adjust accuracy score based on missing words
+            const accuracyScore = Math.max(
+              0,
+              pronunciationResult.accuracyScore * (1 - (missingWordsCount / referenceWords.length))
+            );
+      
+            let errors = [];
+      
             // Add mispronunciation errors from the assessment
             if (pronunciationResult.detailResult && pronunciationResult.detailResult.Words) {
               const mispronunciationErrors = pronunciationResult.detailResult.Words
@@ -226,11 +243,11 @@ function Transcription() {
                   errorType: word.PronunciationAssessment?.ErrorType || 'None',
                   accuracy: word.PronunciationAssessment?.AccuracyScore || 0
                 }))
-                .filter(error => error.errorType !== 'None' || error.accuracy < 80)
-
-              errors.push(...mispronunciationErrors)
+                .filter(error => error.errorType !== 'None' || error.accuracy < 80);
+      
+              errors.push(...mispronunciationErrors);
             }
-
+      
             // Add omitted words
             referenceWords.forEach(word => {
               if (!spokenWords.includes(word)) {
@@ -238,31 +255,26 @@ function Transcription() {
                   word: word,
                   errorType: "Omission",
                   accuracy: 0
-                })
+                });
               }
-            })
-
-            console.log("Current reference text:", currentText)
-            console.log("Spoken words:", spokenWords)
-            console.log("Detected errors:", errors)      
-            console.log("Detected errors:", errors)
-
+            });
+      
             const scores = {
-              accuracyScore: pronunciationResult.accuracyScore,
+              accuracyScore: parseFloat(accuracyScore.toFixed(2)),
               fluencyScore: pronunciationResult.fluencyScore,
-              completenessScore: pronunciationResult.completenessScore,
+              completenessScore: parseFloat(completenessScore.toFixed(2)),
               pronunciationScore: pronunciationResult.pronunciationScore,
               prosodyScore: pronunciationResult.prosodyScore || null,
               errors: errors
-            }
-
-            console.log("Setting assessment scores:", scores)
-            setAssessmentScores(scores)
+            };
+      
+            console.log("Setting assessment scores:", scores);
+            setAssessmentScores(scores);
           } catch (error) {
-            console.error("Error processing pronunciation result:", error)
+            console.error("Error processing pronunciation result:", error);
           }
         }
-      }
+      };
 
       const handleError = (recognizer, e) => {
         console.error(`Recognition canceled:`, {
@@ -282,6 +294,26 @@ function Transcription() {
       throw error
     }
   }
+
+  const calculateAverages = (results) => {
+    if (!results.length) return null;
+    
+    const totals = results.reduce((acc, result) => {
+      return {
+        accuracy: acc.accuracy + result.scores.accuracyScore,
+        fluency: acc.fluency + result.scores.fluencyScore,
+        completeness: acc.completeness + result.scores.completenessScore,
+        pronunciation: acc.pronunciation + result.scores.pronunciationScore
+      };
+    }, { accuracy: 0, fluency: 0, completeness: 0, pronunciation: 0 });
+
+    return {
+      accuracy: (totals.accuracy / results.length).toFixed(2),
+      fluency: (totals.fluency / results.length).toFixed(2),
+      completeness: (totals.completeness / results.length).toFixed(2),
+      pronunciation: (totals.pronunciation / results.length).toFixed(2)
+    };
+  };
 
   useEffect(() => {
     const getMedia = async () => {
@@ -322,12 +354,8 @@ function Transcription() {
     }
   }, [])
 
-  // ... (rest of the component code remains the same, including the return statement)
-
-  // Return statement (same as before)
   return (
     <div className="app-container">
-      {/* <img src={logo} className={`app-logo ${isRecognising ? 'app-logo-rotate' : ''}`} alt="Microsoft Logo" /> */}
       
       {!isAssessmentComplete ? (
         <div className="assessment-container">
@@ -367,12 +395,6 @@ function Transcription() {
                 className="action-button">
                 Clear
               </Button>
-              {/* <Button 
-                variant="secondary" 
-                onClick={removeLastSentence}
-                className="action-button">
-                Remove last sentence
-              </Button> */}
               <Button 
                 variant="warning" 
                 onClick={handleAbort}
@@ -391,7 +413,28 @@ function Transcription() {
       ) : (
         <div className="results-container">
           <h4 className="results-title">Assessment Results</h4>
-          <Table striped bordered hover variant="dark">
+
+           {/* Add this new section */}
+           {results.length > 0 && (
+  <div className="cumulative-results">
+    <h5>Your Overall Result:</h5>
+    <div className="scores-container"> {/* Using the same class as in table */}
+      {(() => {
+        const averages = calculateAverages(results);
+        return (
+          <>
+            {/* <p className="score-item">Accuracy: {averages.accuracy}</p> */}
+            <p className="score-item">Fluency: {averages.fluency}</p>
+            <p className="score-item">Completeness: {averages.completeness}</p>
+            <p className="score-item">Pronunciation: {averages.pronunciation}</p>
+          </>
+        );
+      })()}
+    </div>
+  </div>
+)}
+
+          <Table striped bordered hover>
             <thead>
               <tr>
                 <th>Reference Text</th>
@@ -406,28 +449,38 @@ function Transcription() {
                   <td>{result.transcribedText}</td>
                   <td>
                     <div className="scores-container">
-                      <p className="score-item">Accuracy: {result.scores?.accuracyScore.toFixed(2)}</p>
+                      {/* <p className="score-item">Accuracy: {result.scores?.accuracyScore.toFixed(2)}</p> */}
                       <p className="score-item">Fluency: {result.scores?.fluencyScore.toFixed(2)}</p>
                       <p className="score-item">Completeness: {result.scores?.completenessScore.toFixed(2)}</p>
                       <p className="score-item">Pronunciation: {result.scores?.pronunciationScore.toFixed(2)}</p>
 
-                      {result.scores?.errors?.length > 0 ? (
-                        <div className="errors-container">
-                          <p className="errors-title">Pronunciation Errors Found:</p>
-                          <ul className="errors-list">
-                            {result.scores.errors.map((error, idx) => (
-                              <li key={idx} className={`error-item ${error.errorType.toLowerCase()}`}>
-                                Word: "{error.word}" - Type: {error.errorType}
-                                {error.accuracy !== undefined && error.errorType !== "Omission" && 
-                                  ` (Accuracy: ${error.accuracy.toFixed(2)})`
-                                }
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : (
-                        <p className="no-errors">No pronunciation errors detected</p>
-                      )}
+                     {result.scores?.errors?.length > 0 ? (
+  <div className="errors-container">
+    <p className="errors-title">Pronunciation Errors Found:</p>
+    {(() => {
+      // Group errors by type
+      const errorsByType = result.scores.errors.reduce((acc, error) => {
+        const type = error.errorType;
+        if (!acc[type]) {
+          acc[type] = [];
+        }
+        acc[type].push(error.word);
+        return acc;
+      }, {});
+
+      return Object.entries(errorsByType).map(([errorType, words]) => (
+        <div key={errorType} className="error-group">
+          <span className="error-type">{errorType} errors: </span>
+          <span className="error-words">
+            {words.join(', ')}
+          </span>
+        </div>
+      ));
+    })()}
+  </div>
+) : (
+  <p className="no-errors">No pronunciation errors detected</p>
+)}
                     </div>
                   </td>
                 </tr>
